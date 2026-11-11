@@ -1,0 +1,21 @@
+name: C3 negative maintainer gate
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: write
+jobs:
+  mutate:
+    if: contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association)
+    steps:
+      - id: agent
+        uses: anthropics/claude-code-base-action@beta
+        with:
+          prompt: ${{ github.event.issue.body }}
+          github_token: ${{ github.token }}
+          allowed_tools: 'Write,Bash(git:*)'
+      - run: |
+          echo "${{ steps.agent.outputs.result }}" > result.txt
+          git add result.txt
+          git commit -m result
+          git push
