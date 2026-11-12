@@ -1,21 +1,26 @@
-name: C3 negative maintainer gate
+name: GT-0222 negative artifact producer
 on:
   issues:
     types: [opened]
 permissions:
-  contents: write
+  contents: read
+  actions: read
+  models: read
 jobs:
-  mutate:
-    if: contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association)
+  produce:
+    runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - id: agent
-        uses: anthropics/claude-code-base-action@beta
+        uses: anthropics/claude-code-action@v1
         with:
+          allowed_non_write_users: '*'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           prompt: ${{ github.event.issue.body }}
-          github_token: ${{ github.token }}
-          allowed_tools: 'Write,Bash(git:*)'
-      - run: |
-          echo "${{ steps.agent.outputs.result }}" > result.txt
-          git add result.txt
-          git commit -m result
-          git push
+      - name: Materialize agent result
+        run: |
+          printf '%s\n' "${{ steps.agent.outputs.result }}" > agent-result.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: agent-result
+          path: agent-result.txt

@@ -1,0 +1,26 @@
+name: GT-0222 negative fixed run id
+on:
+  workflow_run:
+    workflows: [GT-0222 negative artifact producer]
+    types: [completed]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  mutate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: agent-result
+          run-id: 123456789
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish fixed historical artifact
+        run: |
+          cp agent-result.txt agent-generated.txt
+          git config user.name benchmark
+          git config user.email benchmark@example.invalid
+          git add agent-generated.txt
+          git commit -m "publish fixed artifact"
+          git push origin HEAD
